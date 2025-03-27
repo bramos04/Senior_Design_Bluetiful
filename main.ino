@@ -16,15 +16,15 @@ Adafruit_VS1053_FilePlayer musicPlayer =
   Adafruit_VS1053_FilePlayer(SHIELD_RESET, SHIELD_CS, SHIELD_DCS, DREQ, CARDCS);
 
 //
-char ssid[] = "tufts_eecs";
-char pass[] = "foundedin1883";
+// char ssid[] = "tufts_eecs";
+// char pass[] = "foundedin1883";
 
-// char ssid[] = "LatinWay160";
-// char pass[] = "42Sunset";
+char ssid[] = "Tufts_Robot";
+// char pass[] = "RTygJWDH36!";
 
 // const char communityBroker[] = "mqtt.eclipseprojects.io";
 // const char computerBroker[] = "172.17.9.16";
-const char broker[] = "xx.x.x.xx";
+const char broker[] = "10.247.137.32";
 int port = 1883;
 const char mqttUser[] = "mqtt-user";
 const char mqttPass[] = "bluetifulpi";
@@ -42,11 +42,12 @@ WiFiClient WiFiclient;
 MqttClient mqttClient(WiFiclient);
 
 int microphonePin = A5;
-const int dataSize = 500;
+const int dataSize = pow(2, 12);
 int data[dataSize];
 
 void setup() {
   Serial.begin(9600);
+  analogReadResolution(10);
   pinMode(microphonePin, INPUT);
   while (!Serial)
     ;
@@ -67,6 +68,11 @@ void setup() {
   musicPlayer.setVolume(20, 20);
   musicPlayer.useInterrupt(VS1053_FILEPLAYER_PIN_INT);
 
+  while(1) {
+    musicPlayer.playFullFile("/track001.mp3");
+    delay(1);
+  }
+
   enable_WiFi();
   connect_WiFi();
 
@@ -79,6 +85,7 @@ void setup() {
 
 void loop() {
   // mqtt_logic();
+
   mqttClient.poll();  // avoids being disconnected by the broker
 
   check_WiFi();  // make sure wifi is connected
@@ -133,7 +140,7 @@ void connect_WiFi() {
     Serial.print(F("Attempting to connect to SSID: "));
     Serial.println(ssid);
     // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
-    status = WiFi.begin(ssid, pass);
+    status = WiFi.begin(ssid); // NOTE: REMOVED PASS
     Serial.print(F("."));
     // wait 10 seconds for connection:
     delay(5000);
@@ -149,7 +156,7 @@ void check_WiFi() {
     Serial.print(F("Disconnected to Wifi"));
     Serial.println(ssid);
     // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
-    status = WiFi.begin(ssid, pass);
+    status = WiFi.begin(ssid); // NOTE: REMOVED PASS
     Serial.print(F("."));
     // wait 10 seconds for connection:
     delay(5000);
@@ -246,7 +253,7 @@ void send_mqtt() {
   Serial.println(F("COLLECTED dATA"));
 
 
-  int numChunks = 6;
+  int numChunks = 40;
   int chunkSize = dataSize / numChunks;  // Divide into 4 parts
   int remainder = dataSize % numChunks;  // Handle uneven division
 
@@ -287,8 +294,17 @@ void send_mqtt() {
 
 void collectData() {
   // get data from analog pin
+  int curr_time = micros();
+
   for (int i = 0; i < dataSize; i++) {
     data[i] = analogRead(microphonePin);
-    // delayMicroseconds(53);
+    delayMicroseconds(244);
   }
+
+  int diff = micros() - curr_time;
+
+  Serial.print(F("Microseconds passed: "));
+  Serial.println(diff);
+
+  
 }
